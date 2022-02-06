@@ -712,7 +712,7 @@ class LocalApi extends Api {
                     matchedPaths.push(path);
                 };
                 const stopMonitoring = () => {
-                    this.unsubscribe(ref.path, 'notify_child_changed', childChangedCallback);
+                    this.unsubscribe(ref.path, 'child_changed', childChangedCallback);
                     this.unsubscribe(ref.path, 'notify_child_added', childAddedCallback);
                     this.unsubscribe(ref.path, 'notify_child_removed', childRemovedCallback);
                 };
@@ -863,7 +863,7 @@ class LocalApi extends Api {
                 };
                 if (options.monitor.add || options.monitor.change || options.monitor.remove) {
                     // Listen for child_changed events
-                    this.subscribe(ref.path, 'notify_child_changed', childChangedCallback);
+                    this.subscribe(ref.path, 'child_changed', childChangedCallback);
                 }
                 if (options.monitor.remove) {
                     this.subscribe(ref.path, 'notify_child_removed', childRemovedCallback);
