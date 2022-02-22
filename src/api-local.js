@@ -405,7 +405,11 @@ class LocalApi extends Api {
                     // Hook into the promise
                     promise = promise.then(results => {
                         resultFilters.forEach(filter => {
-                            results = results.filterMetadata(filter.key, filter.op, filter.compare);
+                            let { key, op, compare, index } = filter;
+                            if (typeof compare === 'string' && !index.caseSensitive) {
+                                compare = compare.toLocaleLowerCase(index.textLocale);
+                            }
+                            results = results.filterMetadata(key, op, compare);
                         });
                         return results;
                     });
@@ -700,6 +704,8 @@ class LocalApi extends Api {
                 options.monitor = { add: true, change: true, remove: true };
             }
             if (typeof options.monitor === 'object' && (options.monitor.add || options.monitor.change || options.monitor.remove)) {
+                // TODO: Refactor this to use 'mutations' event instead of 'notify_child_*'
+
                 const matchedPaths = options.snapshots ? matches.map(match => match.path) : matches.slice();
                 const ref = this.db.ref(path);
                 const removeMatch = (path) => {
@@ -713,7 +719,7 @@ class LocalApi extends Api {
                 };
                 const stopMonitoring = () => {
                     this.unsubscribe(ref.path, 'child_changed', childChangedCallback);
-                    this.unsubscribe(ref.path, 'notify_child_added', childAddedCallback);
+                    this.unsubscribe(ref.path, 'child_added', childAddedCallback);
                     this.unsubscribe(ref.path, 'notify_child_removed', childRemovedCallback);
                 };
                 const childChangedCallback = (err, path, newValue, oldValue) => {
@@ -725,8 +731,8 @@ class LocalApi extends Api {
                     const checkKeys = [];
                     query.filters.forEach(f => !checkKeys.includes(f.key) && checkKeys.push(f.key));
                     const seenKeys = [];
-                    oldValue && typeof oldValue === 'object' && Object.keys(oldValue).forEach(key => !seenKeys.includes(key) && seenKeys.push(key));
-                    newValue && typeof newValue === 'object' && Object.keys(newValue).forEach(key => !seenKeys.includes(key) && seenKeys.push(key));
+                    typeof oldValue === 'object' && Object.keys(oldValue).forEach(key => !seenKeys.includes(key) && seenKeys.push(key));
+                    typeof newValue === 'object' && Object.keys(newValue).forEach(key => !seenKeys.includes(key) && seenKeys.push(key));
                     const missingKeys = [];
                     let isMatch = seenKeys.every(key => {
                         if (!checkKeys.includes(key)) { return true; }
@@ -869,7 +875,7 @@ class LocalApi extends Api {
                     this.subscribe(ref.path, 'notify_child_removed', childRemovedCallback);
                 }
                 if (options.monitor.add) {
-                    this.subscribe(ref.path, 'notify_child_added', childAddedCallback);
+                    this.subscribe(ref.path, 'child_added', childAddedCallback);
                 }
             }
         
@@ -972,7 +978,7 @@ class LocalApi extends Api {
         return this.storage.exportNode(path, stream, options);
     }
 
-    import(path, read, options = { format: 'json', suppress_events: false }) {
+    import(path, read, options = { format: 'json', suppress_events: false, method: 'set' }) {
         return this.storage.importNode(path, read, options);
     }
 
