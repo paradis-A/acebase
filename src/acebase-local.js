@@ -16,8 +16,8 @@ class AceBaseLocalSettings extends AceBaseBaseSettings {
         if (typeof options.ipc === 'object') {
             options.storage.ipc = options.ipc;
         }
-        if (typeof options.transactions === 'object') {
-            options.storage.transactions = options.transactions;
+        if (this.storage && typeof options.transactions === 'object') {
+            this.storage.transactions = options.transactions;
         }
     }
 }
